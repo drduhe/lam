@@ -1,0 +1,30 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+.pytest_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+venv/
+.venv/
+.DS_Store
+
+# Secrets and local env (never commit)
+.env
+.env.*
+!.env.example
+*.pem
+id_rsa
+id_ed25519
+
+# Large demo video frames (optional; restore from upstream SAM3 if needed)
+assets/videos/
+
+# Local checkpoints (keep directory via assets/weights/.gitkeep)
+assets/weights/*.pt

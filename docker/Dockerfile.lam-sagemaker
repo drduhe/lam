@@ -1,0 +1,105 @@
+# Multi-stage image: LAM (Locate Anything Model) SageMaker-style endpoint.
+
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal AS build
+
+ARG BUILD_CERT=/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem
+ARG PIP_INSTALL_LOCATION=https://pypi.org/simple/
+ARG PYTHON_VERSION=3.13
+ENV PATH=/opt/conda/bin:$PATH
+ENV CONDA_TARGET_ENV=lam_sagemaker
+
+WORKDIR /home
+
+USER root
+RUN dnf update -y && dnf install -y wget shadow-utils gcc gcc-c++ make && dnf clean all
+
+RUN ARCH=$(uname -m) && \
+    if [ "$ARCH" = "aarch64" ] || [ "$ARCH" = "arm64" ]; then \
+        MINICONDA_VERSION="Miniconda3-latest-Linux-aarch64"; \
+    else \
+        MINICONDA_VERSION="Miniconda3-latest-Linux-x86_64"; \
+    fi && \
+    MINICONDA_URL="https://repo.anaconda.com/miniconda/${MINICONDA_VERSION}.sh" && \
+    wget -c ${MINICONDA_URL} && \
+    chmod +x ${MINICONDA_VERSION}.sh && \
+    ./${MINICONDA_VERSION}.sh -b -f -p /opt/conda && \
+    rm ${MINICONDA_VERSION}.sh && \
+    ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+
+COPY conda/lam-sagemaker.yml environment.yml
+
+RUN conda config --set always_yes true && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r
+
+RUN conda create -n ${CONDA_TARGET_ENV} -c conda-forge python=${PYTHON_VERSION} -y \
+     && conda env update -n ${CONDA_TARGET_ENV} -f environment.yml \
+     && conda clean -afy \
+     && find /opt/conda/ -follow -type f -name '*.a' -delete \
+     && find /opt/conda/ -follow -type f -name '*.pyc' -delete \
+     && find /opt/conda/ -follow -type f -name '*.js.map' -delete
+
+COPY . lam
+
+# Editable install only: torch/numpy/torchvision/geo libs come from conda-forge (environment.yml).
+RUN conda run -n ${CONDA_TARGET_ENV} python3 -m pip install --upgrade pip && \
+    conda run -n ${CONDA_TARGET_ENV} python3 -m pip install -e lam --no-deps
+
+RUN mkdir -p /opt/checkpoint && \
+    if [ ! -f lam/assets/weights/sam3.pt ]; then \
+        echo "Missing lam/assets/weights/sam3.pt. From the repo root run:" >&2; \
+        echo "  hf sync hf://buckets/drduhe/lam-weights ./assets/weights/" >&2; \
+        exit 1; \
+    fi && \
+    cp lam/assets/weights/sam3.pt /opt/checkpoint/sam3.pt && \
+    ls -lh /opt/checkpoint/sam3.pt
+
+FROM public.ecr.aws/amazonlinux/amazonlinux:2023-minimal AS lam_sagemaker
+
+LABEL com.amazonaws.sagemaker.capabilities.accept-bind-to-port=true
+
+WORKDIR /home
+
+RUN dnf install -y shadow-utils bash && dnf clean all
+
+COPY --from=build /opt/conda /opt/conda
+RUN ln -s /opt/conda/etc/profile.d/conda.sh /etc/profile.d/conda.sh
+
+COPY --from=build /home/lam /home/lam
+COPY --from=build /opt/checkpoint /opt/checkpoint
+
+ENV CONDA_TARGET_ENV=lam_sagemaker
+ENV PATH=/opt/conda/bin:$PATH
+ENV GDAL_DRIVER_PATH=/opt/conda/envs/${CONDA_TARGET_ENV}/lib/gdalplugins
+ENV LD_LIBRARY_PATH=/opt/conda/envs/${CONDA_TARGET_ENV}/lib
+ENV PROJ_LIB=/opt/conda/envs/${CONDA_TARGET_ENV}/share/proj
+ENV CHECKPOINT_PATH=/opt/checkpoint/sam3.pt
+ENV LOAD_FROM_HF=false
+ENV PYTHONUNBUFFERED=1
+ENV PYTHONDONTWRITEBYTECODE=1
+
+RUN     (echo '#!/bin/bash' \
+    &&   echo 'set -euo pipefail' \
+    &&   echo '__conda_setup="$(/opt/conda/bin/conda shell.bash hook 2> /dev/null)"' \
+    &&   echo 'eval "$__conda_setup"' \
+    &&   echo 'conda activate "${CONDA_TARGET_ENV:-base}"' \
+    &&   echo '>&2 echo "ENTRYPOINT: CONDA_DEFAULT_ENV=${CONDA_DEFAULT_ENV}"' \
+    &&   echo 'if [ ! -f /opt/checkpoint/sam3.pt ]; then' \
+    &&   echo '  >&2 echo "ERROR: Checkpoint missing at /opt/checkpoint/sam3.pt"' \
+    &&   echo '  >&2 echo "Mount weights: docker run -v /path/to/sam3.pt:/opt/checkpoint/sam3.pt ..."' \
+    &&   echo '  exit 1' \
+    &&   echo 'fi' \
+    &&   echo 'export CHECKPOINT_PATH=/opt/checkpoint/sam3.pt' \
+    &&   echo '>&2 echo "Using checkpoint: ${CHECKPOINT_PATH}"' \
+    &&   echo 'ls -lh /opt/checkpoint/sam3.pt' \
+    &&   echo 'cd /home/lam' \
+    &&   echo '>&2 echo "Starting LAM HTTP server (app.py) on 0.0.0.0:${SAGEMAKER_BIND_TO_PORT:-8080}"' \
+    &&   echo 'exec "$@"'\
+        ) > /entry.sh && chmod +x /entry.sh
+
+RUN adduser lam-user && \
+    chown -R lam-user:lam-user /home/lam
+
+USER lam-user
+
+ENTRYPOINT ["/entry.sh", "/bin/bash", "-c", "python3 app.py"]

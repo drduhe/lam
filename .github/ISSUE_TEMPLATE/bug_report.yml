@@ -1,0 +1,84 @@
+name: Bug report
+description: Something is broken or behaves incorrectly
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please search existing issues first.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What went wrong in one or two sentences?
+    validations:
+      required: true
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - CLI / GeoTIFF pipeline
+        - HTTP server (`app.py`)
+        - Python API / library
+        - Docker / SageMaker image
+        - Installation / environment
+        - Documentation
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: |
+        OS, Python version, CPU/GPU, and how you installed LAM (e.g. `pip install -e .`, conda env file).
+      placeholder: |
+        e.g. macOS 15, Python 3.12, CPU, `pip install -e ".[geospatial]"`
+    validations:
+      required: true
+
+  - type: textarea
+    id: versions
+    attributes:
+      label: Version / commit
+      description: Output of `python -c "import lam; print(lam.__version__)"` and/or git commit SHA if installed from source.
+      placeholder: "0.1.0"
+    validations:
+      required: false
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Minimal commands or code that trigger the issue.
+      placeholder: |
+        1. …
+        2. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: Include full error messages and tracebacks if applicable.
+    validations:
+      required: true
+
+  - type: textarea
+    id: weights
+    attributes:
+      label: Weights / checkpoint (if relevant)
+      description: Local path, `CHECKPOINT_PATH`, Hugging Face, etc.
+    validations:
+      required: false

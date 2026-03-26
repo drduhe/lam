@@ -1,0 +1,50 @@
+# Install: pip install '.[dev]' && pre-commit install
+# Run manually: pre-commit run --all-files
+#
+# Optional later: add codespell after fixing or ignoring upstream typos in configs/LICENSE.
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+        exclude: ^assets/.*\.json$
+      - id: check-merge-conflict
+      - id: check-case-conflict
+      - id: check-added-large-files
+        args: ["--maxkb=2048"]
+      - id: mixed-line-ending
+        args: [--fix=lf]
+      - id: detect-private-key
+      - id: debug-statements
+        files: ^(lam/|app\.py|scripts/).*\.py$
+      - id: check-ast
+        files: ^(lam/|app\.py|scripts/).*\.py$
+
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.24.1
+    hooks:
+      - id: validate-pyproject
+
+  # Import sort then format (Black); ruff-format omitted to avoid double-formatting.
+  - repo: https://github.com/PyCQA/isort
+    rev: 8.0.1
+    hooks:
+      - id: isort
+        files: ^(lam/|app\.py|scripts/).*\.py$
+
+  - repo: https://github.com/psf/black
+    rev: 25.9.0
+    hooks:
+      - id: black
+        files: ^(lam/|app\.py|scripts/).*\.py$
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.11.4
+    hooks:
+      - id: ruff
+        args: [--fix]
+        files: ^(lam/|app\.py|scripts/).*\.py$

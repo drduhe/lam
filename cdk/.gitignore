@@ -1,0 +1,55 @@
+# =============================================================================
+# LAM CDK app (TypeScript) — paths are relative to this directory
+# =============================================================================
+# Parent repo: see ../.gitignore for Python, OS, and editor defaults.
+#
+# This app uses "noEmit" TypeScript (ts-node / CDK); emitted *.js would be
+# accidental except Jest’s config, which stays tracked via the negation below.
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Dependencies
+# -----------------------------------------------------------------------------
+node_modules/
+
+# -----------------------------------------------------------------------------
+# CDK synth output & account-specific cache (regenerated; often huge)
+# -----------------------------------------------------------------------------
+cdk.out/
+cdk.context.json
+
+# -----------------------------------------------------------------------------
+# Local deploy configuration (may contain account IDs, VPC ids, secrets)
+# -----------------------------------------------------------------------------
+# Track deployment.json.example; keep real deployment.json out of git.
+deployment.json
+
+# -----------------------------------------------------------------------------
+# Accidental JS / declaration emit (tsc with emit enabled, stray scripts)
+# -----------------------------------------------------------------------------
+*.js
+!jest.config.js
+*.d.ts
+
+# -----------------------------------------------------------------------------
+# cdk-nag report tooling (regenerated locally)
+# -----------------------------------------------------------------------------
+.cdk-nag-suppressions-temp.json
+cdk-nag-suppressions-report.txt
+
+# -----------------------------------------------------------------------------
+# Tests & package managers
+# -----------------------------------------------------------------------------
+coverage/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# -----------------------------------------------------------------------------
+# Local env files (optional; prefer deployment.json.example + docs for structure)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example

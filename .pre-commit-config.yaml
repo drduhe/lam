@@ -1,6 +1,9 @@
 # Install: pip install '.[dev]' && pre-commit install
 # Run manually: pre-commit run --all-files
 #
+# CDK: run `cd cdk && npm ci` (or `npm install`) once so `npx tsc` is available;
+# Jest for CDK runs in CI (`.github/workflows/ci.yml`).
+#
 # Optional later: add codespell after fixing or ignoring upstream typos in configs/LICENSE.
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -28,6 +31,7 @@ repos:
     rev: v0.24.1
     hooks:
       - id: validate-pyproject
+        name: validate pyproject.toml
 
   # Import sort then format (Black); ruff-format omitted to avoid double-formatting.
   - repo: https://github.com/PyCQA/isort
@@ -48,3 +52,19 @@ repos:
       - id: ruff
         args: [--fix]
         files: ^(lam/|app\.py|scripts/).*\.py$
+
+  - repo: local
+    hooks:
+      - id: tsc
+        name: tsc
+        entry: bash -c 'cd cdk && npx tsc --noEmit'
+        language: system
+        pass_filenames: false
+        files: ^cdk/
+
+      - id: cdk-eslint
+        name: eslint
+        entry: bash -c 'cd cdk && npm run lint'
+        language: system
+        pass_filenames: false
+        files: ^cdk/

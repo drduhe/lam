@@ -1,9 +1,91 @@
+# =============================================================================
+# Docker build context (repo root → docker/Dockerfile.lam-sagemaker)
+# =============================================================================
+# Patterns here shrink the tarball sent to the daemon, speed up `docker build`,
+# and avoid pulling CDK synth output into SageMaker images when CDK stages this
+# repo as a Docker asset.
+#
+# Important: do NOT ignore
+#   - conda/          (first stage copies conda/lam-sagemaker.yml)
+#   - docker/         (Dockerfile path; CDK Docker asset uses this .dockerignore)
+#   - lam/**          (editable install + runtime code)
+#   - any pattern that would drop lam/assets/weights/sam3.pt (build checks it)
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Version control & editor noise (never needed inside the image)
+# -----------------------------------------------------------------------------
 .git
+.gitattributes
 .gitignore
-.venv
-venv
-__pycache__
-*.egg-info
-.pytest_cache
-.mypy_cache
-*.pyc
+
+# -----------------------------------------------------------------------------
+# AWS CDK / IaC — large trees (node_modules, cdk.out asset copies); not used by
+# the application container.
+# -----------------------------------------------------------------------------
+cdk/
+
+# -----------------------------------------------------------------------------
+# Local Python environments & bytecode (conda env is built inside the image)
+# -----------------------------------------------------------------------------
+**/__pycache__/
+**/*.py[cod]
+**/*.pyo
+**/*.egg-info/
+**/.eggs/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+.envrc
+
+# -----------------------------------------------------------------------------
+# Test, type-check, and lint caches (not required for `pip install -e` runtime)
+# -----------------------------------------------------------------------------
+tests/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.hypothesis/
+.tox/
+.nox/
+
+# -----------------------------------------------------------------------------
+# Secrets & local env — keep out of images and build contexts (defense in depth)
+# -----------------------------------------------------------------------------
+.env
+.env.*
+!.env.example
+*.pem
+id_rsa
+id_ed25519
+id_ecdsa
+*.key
+
+# -----------------------------------------------------------------------------
+# OS & IDE artifacts
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.cursor/
+
+# -----------------------------------------------------------------------------
+# Optional large / non-runtime trees (see root .gitignore)
+# -----------------------------------------------------------------------------
+assets/videos/
+
+# -----------------------------------------------------------------------------
+# Repo tooling — not imported by the SageMaker app
+# -----------------------------------------------------------------------------
+# Do NOT list docker/ here: the image is built with
+# `docker build -f docker/Dockerfile.lam-sagemaker`, and CDK applies this file
+# when staging the asset tarball—ignoring docker/ drops the Dockerfile path.
+.github/

@@ -1,0 +1,17 @@
+{
+  "projectName": "LAM",
+  "account": {
+    "id": "123456789012",
+    "region": "us-west-2",
+    "prodLike": false,
+    "isAdc": false
+  },
+  "modelEndpointConfig": {
+    "BUILD_FROM_SOURCE": true,
+    "CONTAINER_BUILD_PATH": "..",
+    "CONTAINER_DOCKERFILE": "docker/Dockerfile.lam-sagemaker",
+    "MODEL_NAME": "lam",
+    "INSTANCE_TYPE": "ml.g5.4xlarge"
+  },
+  "deployIntegrationTests": false
+}

@@ -13,25 +13,40 @@ concurrency:
 
 jobs:
   lint:
-    name: Lint (ruff, black, isort)
+    name: Lint (pre-commit)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      # Match local dev and pyproject [tool.black] / [tool.ruff] target-version py313.
       - uses: actions/setup-python@v5
         with:
-          python-version: "3.10"
+          python-version: "3.13"
           cache: pip
-          cache-dependency-path: pyproject.toml
+          cache-dependency-path: |
+            pyproject.toml
+            .pre-commit-config.yaml
 
-      - name: Install linters
-        run: pip install "ruff>=0.11.4" "black>=25.9.0" "isort>=8.0.0"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: cdk/package-lock.json
 
-      - name: Run linters
-        run: |
-          ruff check lam app.py scripts
-          black --check lam app.py scripts
-          isort --check-only lam app.py scripts
+      - name: Install CDK dependencies
+        working-directory: cdk
+        run: npm ci
+
+      - name: Install pre-commit
+        run: pip install "pre-commit>=4.0.0"
+
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run pre-commit
+        run: pre-commit run --all-files --show-diff-on-failure
 
   test:
     name: Tests (Python ${{ matrix.python-version }})
@@ -55,3 +70,23 @@ jobs:
 
       - name: Run unit tests
         run: pytest
+
+  cdk:
+    name: CDK (Jest)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: cdk/package-lock.json
+
+      - name: Install CDK dependencies
+        working-directory: cdk
+        run: npm ci
+
+      - name: Run CDK unit tests
+        working-directory: cdk
+        run: npm test

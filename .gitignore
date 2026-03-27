@@ -1,30 +1,85 @@
+# =============================================================================
+# LAM repository — files to keep out of version control
+# =============================================================================
+# CDK TypeScript output and local deploy config live under cdk/; see also
+# cdk/.gitignore (node_modules, cdk.out, deployment.json, etc.).
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Bytecode, packaging, and local installs
+# -----------------------------------------------------------------------------
 __pycache__/
 *.py[cod]
+*.pyo
 *.egg-info/
+*.egg
 dist/
 build/
 .eggs/
+
+# -----------------------------------------------------------------------------
+# Virtual environments & direnv (conda envs are usually outside the repo)
+# -----------------------------------------------------------------------------
+.venv/
+venv/
+env/
+ENV/
+.envrc
+
+# -----------------------------------------------------------------------------
+# Tests, types, and linters
+# -----------------------------------------------------------------------------
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+
+# -----------------------------------------------------------------------------
+# Coverage reports
+# -----------------------------------------------------------------------------
 .coverage
 .coverage.*
 coverage.xml
 htmlcov/
-.mypy_cache/
-.ruff_cache/
-venv/
-.venv/
-.DS_Store
 
-# Secrets and local env (never commit)
+# -----------------------------------------------------------------------------
+# Jupyter
+# -----------------------------------------------------------------------------
+.ipynb_checkpoints/
+
+# -----------------------------------------------------------------------------
+# OS noise
+# -----------------------------------------------------------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------------------------------------------------------
+# Editor / local tooling (drop .vscode/ here if your team commits shared settings)
+# -----------------------------------------------------------------------------
+.idea/
+.vscode/
+
+# -----------------------------------------------------------------------------
+# Secrets and credentials — never commit
+# -----------------------------------------------------------------------------
 .env
 .env.*
 !.env.example
 *.pem
+*.key
 id_rsa
 id_ed25519
+id_ecdsa
 
-# Large demo video frames (optional; restore from upstream SAM3 if needed)
+# -----------------------------------------------------------------------------
+# Large or regenerated media (optional local demos; restore from upstream if needed)
+# -----------------------------------------------------------------------------
 assets/videos/
 
-# Local checkpoints (keep directory via assets/weights/.gitkeep)
-assets/weights/*.pt
+# -----------------------------------------------------------------------------
+# Model checkpoints (large binaries; fetch locally for Docker / inference)
+# Matches repo-root and package paths, e.g. lam/assets/weights/sam3.pt
+# -----------------------------------------------------------------------------
+**/assets/weights/*.pt

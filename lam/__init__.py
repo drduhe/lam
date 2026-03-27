@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 __all__ = ["build_lam_image_model", "build_sam3_image_model"]
 

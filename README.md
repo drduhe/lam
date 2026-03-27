@@ -159,6 +159,8 @@ Response body is a **GeoJSON FeatureCollection** with geometries in the requeste
 
 Production-style images and local run examples (including GPU and large GeoTIFF entrypoint overrides) are documented in **[`docker/README.md`](docker/README.md)**.
 
+To provision **VPC + SageMaker endpoint** in AWS with the same container, use the CDK app under **[`cdk/`](cdk/README.md)** (`deployment.json` from `deployment.json.example`, then `cdk deploy --all`).
+
 Weights for the image must be present under **`assets/weights/`** (for example **`sam3.pt`**). Sync them from the project Hugging Face bucket, then build from the **repository root** (the directory that contains `pyproject.toml` and `app.py`):
 
 ```bash
@@ -179,6 +181,7 @@ docker build -f docker/Dockerfile.lam-sagemaker -t lam-sagemaker:latest .
 | `app.py` | Flask app: GDAL decode → LAM → GeoJSON |
 | `lam/hosting/` | Server helpers, SageMaker-oriented parsing, GeoJSON serialization |
 | `docker/` | Multi-stage SageMaker-oriented Dockerfile |
+| `cdk/` | AWS CDK: VPC, SageMaker role, real-time endpoint (see **`cdk/README.md`**) |
 | `conda/lam-sagemaker.yml` | Reference conda environment for GDAL + aligned scientific stack |
 
 ---

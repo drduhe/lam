@@ -9,6 +9,19 @@ and this project aims to follow [Semantic Versioning](https://semver.org/spec/v2
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-03-27
+
+### Added
+
+- GeoTIFF CLI wall-clock benchmarking: `scripts/benchmark_geotiff_cli.py` runs `python -m lam` in a subprocess (aligned with typical SageMaker `%%time` usage), with `--json`, `--warmup`, `--repeat`, `--raster-info-only`, and passthrough of extra `lam` flags.
+- `benchmarks/README.md` documenting methodology, script usage, and regression-tracking tips; `benchmarks/ml.g6.4xlarge.json` as a sample machine-readable result.
+- Root `README.md` performance-benchmarking subsection and repository-layout entries for `benchmarks/` and the benchmark script.
+
+### Changed
+
+- CLI loads weights from a **local file only** (`$CHECKPOINT_PATH` or `<repo>/assets/weights/sam3.pt`); it no longer downloads from Hugging Face. Removed `--no-hf`. Missing weights exit with a clear message before model load.
+- `lam/__init__.py` version set to **0.2.1**.
+
 ## [0.2.0] - 2026-03-27
 
 ### Added

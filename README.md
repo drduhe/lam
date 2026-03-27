@@ -96,7 +96,7 @@ Use **`--min-score`** (for example **`0.35`**) to hide low-confidence polygons. 
 - Tiling defaults: **1008** px tiles, **128** px overlap (override with **`--tile-size`** / **`--overlap`**).
 - Cross-tile deduplication uses **class-agnostic NMS** on boxes in raster space (default IoU **0.45**). Disable with **`--merge-iou -1`**.
 - Output CRS: **`--dst-crs EPSG:4326`** by default; set **`--dst-crs`** empty to keep the raster’s CRS.
-- Weights: **`assets/weights/sam3.pt`** at the repo root is used when that file exists (populate with **`hf sync hf://buckets/drduhe/lam-weights ./assets/weights/`**); else **`$CHECKPOINT_PATH`** if set; else Hugging Face. Pass **`--checkpoint`** to override; **`--no-hf`** requires a local path (env, that file, or **`--checkpoint`**).
+- Weights: the CLI always loads a **local** file only—**`$CHECKPOINT_PATH`** if set, else **`<repo>/assets/weights/sam3.pt`**. The file must exist (populate with **`hf sync hf://buckets/drduhe/lam-weights ./assets/weights/`**). Pass **`--checkpoint`** to override. The CLI does **not** download from Hugging Face.
 
 ### HTTP server (tiled raster per request)
 
@@ -168,6 +168,10 @@ hf sync hf://buckets/drduhe/lam-weights ./assets/weights/
 docker build -f docker/Dockerfile.lam-sagemaker -t lam-sagemaker:latest .
 ```
 
+### Performance benchmarking
+
+End-to-end **wall-clock** timing for the GeoTIFF CLI (subprocess, matching SageMaker notebook `%%time` usage) is documented in **[`benchmarks/README.md`](benchmarks/README.md)**. Use **`scripts/benchmark_geotiff_cli.py`** to reproduce runs and emit **`--json`** for regression notes.
+
 ---
 
 ## Repository layout
@@ -183,6 +187,8 @@ docker build -f docker/Dockerfile.lam-sagemaker -t lam-sagemaker:latest .
 | `docker/` | Multi-stage SageMaker-oriented Dockerfile |
 | `cdk/` | AWS CDK: VPC, SageMaker role, real-time endpoint (see **`cdk/README.md`**) |
 | `conda/lam-sagemaker.yml` | Reference conda environment for GDAL + aligned scientific stack |
+| `benchmarks/` | Performance benchmarking notes for the GeoTIFF CLI |
+| `scripts/benchmark_geotiff_cli.py` | Wall-time driver for `python -m lam` (see `benchmarks/README.md`) |
 
 ---
 

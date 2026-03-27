@@ -10,14 +10,13 @@ from pathlib import Path
 import torch
 
 
-def _default_checkpoint_path() -> str | None:
-    """Resolve checkpoint: ``CHECKPOINT_PATH`` env, else ``<repo>/assets/weights/sam3.pt`` if present."""
+def _default_checkpoint_path() -> str:
+    """Resolve checkpoint: ``CHECKPOINT_PATH`` env, else ``<repo>/assets/weights/sam3.pt``."""
     env = os.environ.get("CHECKPOINT_PATH")
     if env:
         return env
     repo_root = Path(__file__).resolve().parent.parent
-    candidate = repo_root / "assets" / "weights" / "sam3.pt"
-    return str(candidate) if candidate.is_file() else None
+    return str(repo_root / "assets" / "weights" / "sam3.pt")
 
 
 def main() -> None:
@@ -45,13 +44,8 @@ def main() -> None:
         "--checkpoint",
         default=None,
         metavar="PATH",
-        help="Weights .pt; overrides defaults. If omitted: $CHECKPOINT_PATH, else assets/weights/sam3.pt "
-        "under the repo root when that file exists, otherwise Hugging Face.",
-    )
-    parser.add_argument(
-        "--no-hf",
-        action="store_true",
-        help="Do not download from Hugging Face (requires --checkpoint)",
+        help="Weights .pt. If omitted: $CHECKPOINT_PATH, else <repo>/assets/weights/sam3.pt (file must exist; "
+        "CLI does not download from Hugging Face).",
     )
     parser.add_argument(
         "--dst-crs",
@@ -76,22 +70,25 @@ def main() -> None:
         )
         sys.exit(1)
 
+    if not Path(checkpoint).is_file():
+        print(
+            f"Weights not found: {checkpoint}\n"
+            "Place sam3.pt at assets/weights/ under the repo root, set CHECKPOINT_PATH, or pass --checkpoint. "
+            "Example: hf sync hf://buckets/drduhe/lam-weights ./assets/weights/",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+
     from lam.geospatial.pipeline import run_geotiff_inference, write_geojson
     from lam.model.sam3_image_processor import Sam3Processor
     from lam.model_builder import build_lam_image_model
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
-    load_from_hf = not args.no_hf
-    if args.no_hf and not checkpoint:
-        print(
-            "--no-hf requires a checkpoint ($CHECKPOINT_PATH, assets/weights/sam3.pt, or --checkpoint)", file=sys.stderr
-        )
-        sys.exit(1)
 
     model = build_lam_image_model(
         device=device,
         checkpoint_path=checkpoint,
-        load_from_HF=load_from_hf,
+        load_from_HF=False,
     )
     model = model.to(device)
     processor = Sam3Processor(model, device=device)
